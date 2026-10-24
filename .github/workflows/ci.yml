@@ -1,0 +1,65 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Audit dependencies
+        run: npm audit --audit-level=high
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Type-check
+        run: npm run typecheck
+
+      - name: Run parser and D1/API regression tests
+        env:
+          TZ: UTC
+        run: npm test
+
+      - name: Repeat calendar tests in Asia/Shanghai
+        env:
+          TZ: Asia/Shanghai
+        run: |
+          node --import tsx scripts/test-schedule-parsers.ts
+          node --import tsx scripts/test-ics.ts
+
+      - name: Repeat calendar tests in America/New_York
+        env:
+          TZ: America/New_York
+        run: |
+          node --import tsx scripts/test-schedule-parsers.ts
+          node --import tsx scripts/test-ics.ts
+
+      - name: Build
+        run: npm run build
+
+      - name: Validate Worker bundle
+        run: npx wrangler deploy --dry-run --config worker/wrangler.jsonc
