@@ -1,13 +1,14 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import localFont from "next/font/local";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
 import { PrimaryDomainRedirect } from "@/components/PrimaryDomainRedirect";
 
-const inter = Inter({
+// Self-hosted Inter (variable) so dev and builds never depend on fonts.gstatic.com.
+const inter = localFont({
+  src: "./fonts/inter-latin.woff2",
   variable: "--font-sans",
-  subsets: ["latin"],
   display: "swap",
 });
 
